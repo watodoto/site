@@ -172,6 +172,9 @@ draw() {
     printf "┤"
     printf " %-*s│\n" $(( R_INNER - 1 )) "${right_content[1]}"
 
+    # r_content_rows = number of rows the right panel content occupies inside the loop
+    local r_content_rows=$(( r_rows - 2 ))
+
     # Flag rows
     for (( row=0; row<total_rows; row++ )); do
         if (( row < total_flags )); then
@@ -187,19 +190,25 @@ draw() {
         fi
 
         local r_idx=$(( row + 2 ))
-        # Right panel: print content if within r_rows, otherwise empty bordered row
-        if (( row < r_rows - 2 )); then
+        if (( row < r_content_rows - 1 )); then
+            # Normal right panel content row
             printf " %-*s│\n" $(( R_INNER - 1 )) "${right_content[$r_idx]:-}"
+        elif (( row == r_content_rows - 1 )); then
+            # Last content row — print it then close the right box on the next line
+            printf " %-*s│\n" $(( R_INNER - 1 )) "${right_content[$r_idx]:-}"
+            # Right box bottom border (mid-table)
+            printf "│%-*s└" "$L_INNER" ""
+            repeat_char '─' $R_INNER
+            printf "┘\n"
         else
-            printf " %-*s│\n" $(( R_INNER - 1 )) ""
+            # Right panel closed, left column continues solo with no right border
+            printf "\n"
         fi
     done
 
-    # Bottom border — close both columns
+    # Bottom border — left column only (right already closed mid-table)
     printf "└"
     repeat_char '─' $L_INNER
-    printf "┴"
-    repeat_char '─' $R_INNER
     printf "┘\n"
 
     # Decode input line
