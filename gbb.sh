@@ -48,6 +48,7 @@ gbb_states=()
 for ((i=0; i<${#gbb_names[@]}; i++)); do
     gbb_states+=(0)
 done
+
 total_flags=${#gbb_names[@]}
 current_index=0
 
@@ -55,7 +56,7 @@ current_index=0
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
-        if [[ ${gbb_states[$i]} -eq 1 ]]; then
+        if [[ "${gbb_states[$i]}" == "1" ]]; then
             (( hex_val |= (1 << i) ))
         fi
     done
@@ -76,7 +77,7 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- READ KEY (handles escape sequences) ----------------
+# ---------------- READ KEY ----------------
 read_key() {
     local key seq
     read -rsn1 key
@@ -89,7 +90,7 @@ read_key() {
 
 # ---------------- DRAW ENGINE ----------------
 draw_interface() {
-    printf "\e[H\e[J"
+    printf "\e[H\e[?25l"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
@@ -130,26 +131,27 @@ draw_interface() {
 
         if (( i <= 8 )); then
             if (( sep )); then
-                echo "│ $left_content ├$right_content"
+                printf "│ %s ├%s\n" "$left_content" "$right_content"
             else
-                echo "│ $left_content │$right_content"
+                printf "│ %s │%s\n" "$left_content" "$right_content"
             fi
         else
-            echo "│ $left_content │"
+            printf "│ %s │\n" "$left_content"
         fi
     done
+
     echo "└───────────────────────────────────┘"
 }
 
-# ---------------- TERMINAL CLEANUP TRAP ----------------
+# ---------------- CLEANUP ----------------
 cleanup() {
-    printf "\e[?25h"
+    printf "\e[?25h\e[0m"
     clear
     exit 0
 }
 trap cleanup SIGINT SIGTERM
 
-# ---------------- APPLICATION START ----------------
+# ---------------- START ----------------
 printf "\e[?25l"
 clear
 
@@ -164,7 +166,7 @@ while true; do
         w|W|$'\e[A')
             (( current_index > 0 )) && (( current_index-- ))
             ;;
-            $'\n'|$'\r')
+        $'\n'|$'\r'|"")
             (( gbb_states[current_index] ^= 1 ))
             ;;
         d|D)
