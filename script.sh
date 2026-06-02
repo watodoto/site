@@ -5,6 +5,10 @@ if [ -z "$BASH_VERSION" ]; then
     exit 1
 fi
 
+# When run via curl | bash, stdin is the pipe not the terminal.
+# Reattach stdin to the terminal so all reads work correctly.
+exec < /dev/tty
+
 # ---------------- CONFIG ----------------
 
 quotes=(
@@ -62,10 +66,12 @@ tty_read() {
     local prompt="$1"
     local varname="$2"
     local val=""
-    while [[ -z "$val" ]]; do
-        echo -n "$prompt"
-        read -r val < /dev/tty
+    echo -n "$prompt"
+    exec 3< /dev/tty
+    while IFS= read -r val <&3; do
+        [[ -n "$val" ]] && break
     done
+    exec 3<&-
     printf -v "$varname" '%s' "$val"
 }
 
