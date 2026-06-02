@@ -78,7 +78,7 @@ draw_header() {
     local by="by wato"
 
     echo "┌─────────────────────┬──────┐"
-    printf "│%s│ %s │\n" "$(center "$left" 21)" "$right"
+    printf "│%s│%s│\n" "$(center "$left" 21)" "$right"
     printf "│%s├──────┤\n" "$(center "$by" 21)"
 }
 
@@ -96,21 +96,25 @@ menu_enrollment() {
         echo "│ (e) Back                     │"
         echo "└──────────────────────────────┘"
 
-        read -rp "Select an option: " e_choice
+        echo -n "Select an option: "
+        read -r e_choice
 
         case "$e_choice" in
             q)
-                read -rp "Are you sure? (y/n): " confirm
+                echo -n "Are you sure? (y/n): "
+                read -r confirm
                 case "$confirm" in
                     y|Y)
                         mount --bind /dev/null /tmp/machine-info
                         initctl restart ui
                         echo "Success!"
-                        read -rp "Press enter to go back..."
+                        echo "Press enter to go back..."
+                read -r _junk
                         ;;
                     *)
                         echo "Cancelled."
-                        read -rp "Press enter to go back..."
+                        echo "Press enter to go back..."
+                read -r _junk
                         ;;
                 esac
                 ;;
@@ -123,7 +127,8 @@ menu_enrollment() {
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..." _junk
+                echo "Press enter to continue..."
+                read -r _junk
                 ;;
         esac
     done
@@ -144,7 +149,8 @@ menu_firmware() {
         echo "│ (r) Back                     │"
         echo "└──────────────────────────────┘"
 
-        read -rp "Select an option: " f_choice
+        echo -n "Select an option: "
+        read -r f_choice
 
         case "$f_choice" in
             q)
@@ -212,14 +218,16 @@ menu_firmware() {
                 echo "└────────────────────────┘"
                 echo
 
-                read -rp "Press enter to go back..."
+                echo "Press enter to go back..."
+                read -r _junk
                 ;;
             r)
                 break
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..." _junk
+                echo "Press enter to continue..."
+                read -r _junk
                 ;;
         esac
     done
@@ -238,7 +246,8 @@ menu_wifi() {
         echo "│ (w) Back                     │"
         echo "└──────────────────────────────┘"
 
-        read -rp "Select an option: " w_choice
+        echo -n "Select an option: "
+        read -r w_choice
 
         case "$w_choice" in
             w)
@@ -246,7 +255,8 @@ menu_wifi() {
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..." _junk
+                echo "Press enter to continue..."
+                read -r _junk
                 ;;
         esac
     done
@@ -265,7 +275,8 @@ menu_misc() {
         echo "│ (w) Back                     │"
         echo "└──────────────────────────────┘"
 
-        read -rp "Select an option: " m_choice
+        echo -n "Select an option: "
+        read -r m_choice
 
         case "$m_choice" in
             w)
@@ -273,7 +284,8 @@ menu_misc() {
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..." _junk
+                echo "Press enter to continue..."
+                read -r _junk
                 ;;
         esac
     done
@@ -302,7 +314,8 @@ draw_menu() {
 while true; do
     draw_menu
 
-    read -rp "Select an option: " choice
+    echo -n "Select an option: "
+    read -r choice
 
     case "$choice" in
         q) menu_enrollment ;;
@@ -315,7 +328,8 @@ while true; do
             ;;
         *)
             echo "Invalid option."
-            read -rp "Press enter to continue..." _junk
+            echo "Press enter to continue..."
+                read -r _junk
             ;;
     esac
 done
