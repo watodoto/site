@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# When run via curl | bash, stdin is the pipe not the terminal.
+exec < /dev/tty
+
 # ---------------- DATA ----------------
 
 gbb_names=(
@@ -48,7 +51,6 @@ gbb_states=(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# decode mode state
 decode_mode=0
 decode_input=""
 decode_error=""
@@ -179,13 +181,13 @@ draw() {
     printf '─%.0s' $(seq 1 $L_INNER)
     printf "┘\n"
 
-    # Decode input line below menu
+    # Decode input line
     if [[ $decode_mode -eq 1 ]]; then
         printf "\e[K Decode flags: %s_" "$decode_input"
     elif [[ -n "$decode_error" ]]; then
         printf "\e[K \e[31m%s\e[0m" "$decode_error"
     else
-        printf "\e[K"
+        printf "\e[K\n"
     fi
 }
 
@@ -207,19 +209,17 @@ clear
 while true; do
     draw
 
-    # Read one keypress (handle escape sequences for arrow keys)
     read -rsn1 key
 
+    # Catch escape sequences (arrow keys)
     if [[ $key == $'\e' ]]; then
         read -rsn2 -t 0.1 key2
         key="$key$key2"
     fi
 
-    # Decode input mode: collect characters
     if [[ $decode_mode -eq 1 ]]; then
         case "$key" in
-            $'\n'|$'\r'|"")
-                # Submit
+            $'\n'|$'\r')
                 if decode_hex "$decode_input"; then
                     decode_error=""
                 else
@@ -229,17 +229,14 @@ while true; do
                 decode_mode=0
                 ;;
             $'\x7f'|$'\b')
-                # Backspace
                 decode_input="${decode_input%?}"
                 ;;
             $'\e')
-                # Escape cancels decode mode
                 decode_input=""
                 decode_mode=0
                 decode_error=""
                 ;;
             *)
-                # Only allow hex-valid chars and 0x prefix chars
                 if [[ "$key" =~ ^[0-9a-fA-FxX]$ ]]; then
                     decode_input="$decode_input$key"
                 fi
@@ -248,17 +245,16 @@ while true; do
         continue
     fi
 
-    # Normal navigation mode
     case "$key" in
-        $'\e[A')  # Up arrow
+        $'\e[A')
             (( current_index > 0 )) && (( current_index-- ))
             decode_error=""
             ;;
-        $'\e[B')  # Down arrow
+        $'\e[B')
             (( current_index < total_flags - 1 )) && (( current_index++ ))
             decode_error=""
             ;;
-        $'\n'|$'\r'|"")  # Enter
+        $'\n'|$'\r')
             if [[ ${gbb_states[$current_index]} -eq 1 ]]; then
                 gbb_states[$current_index]=0
             else
