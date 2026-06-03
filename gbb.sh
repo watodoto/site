@@ -90,15 +90,20 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- INPUT ----------------
+# ---------------- INPUT (FIXED: NO TETRIS MODE) ----------------
 read_key() {
     local key rest
 
+    # wait for input, otherwise DO NOTHING (prevents replay bugs)
     IFS= read -rsn1 -t 0.05 key || return
     [[ -z "$key" ]] && return
 
+    # build escape sequence safely (arrows)
     if [[ "$key" == $'\e' ]]; then
-        IFS= read -rsn2 -t 0.001 rest || rest=""
+        IFS= read -rsn1 -t 0.001 rest || rest=""
+        key+="$rest"
+
+        IFS= read -rsn1 -t 0.001 rest || rest=""
         key+="$rest"
     fi
 
@@ -117,9 +122,9 @@ draw_interface() {
         desc_lines+=("$line")
     done < <(printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49)
 
-    echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-    echo "│      GBB-flaginator in Bash!      │ Press enter, arrows to navigate, E to exit.      │"
-    echo "├───────────────────────────────────┤                                                   │"
+echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
+echo "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │"
+echo "├───────────────────────────────────┤ Press E to exit the tool!                         │"
 
     for i in "${!gbb_names[@]}"; do
         local marker=" "
@@ -161,23 +166,18 @@ draw_interface() {
     echo "└───────────────────────────────────┘"
 }
 
-# ---------------- HEX PROMPT ----------------
+# ---------------- HEX PROMPT (ISOLATED MODAL) ----------------
 hex_prompt() {
     printf "\e[?25h"
     printf "\nEnter hex string (ex. 0xa0b1): "
 
     stty "$orig_tty" 2>/dev/null
     read -r user_input
-
     stty -echo -icanon min 1 time 0 2>/dev/null
 
-    printf "\e[2J\e[H"
+    printf "\e[2J\e[H\e[?25l"
 
-    if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
-        decode_gbb_hex "$user_input"
-    fi
-
-    printf "\e[?25l"
+    [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]] && decode_gbb_hex "$user_input"
 }
 
 # ---------------- MAIN LOOP ----------------
@@ -185,8 +185,13 @@ clear
 printf "\e[?25l"
 
 while true; do
+    INPUT_KEY=""
+
     draw_interface
     read_key
+
+    [[ -z "$INPUT_KEY" ]] && continue
+    [[ "$INPUT_KEY" == $'\e' ]] && continue
 
     case "$INPUT_KEY" in
         s|S|$'\e[B')
@@ -195,7 +200,7 @@ while true; do
         w|W|$'\e[A')
             ((current_index > 0)) && ((current_index--))
             ;;
-        $'\n'|$'\r')
+        $'\n')
             ((gbb_states[current_index] ^= 1))
             ;;
         d|D)
@@ -203,8 +208,6 @@ while true; do
             ;;
         e|E)
             cleanup
-            ;;
-        "")
             ;;
     esac
 
