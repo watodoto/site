@@ -52,17 +52,27 @@ done
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# ---------------- TERMINAL SETUP (FIXED PROPERLY) ----------------
-# IMPORTANT: no polling loop + no echo + raw input
+# ---------------- TERMINAL SETUP ----------------
+orig_tty=$(stty -g 2>/dev/null || echo "")
+
 stty -echo -icanon min 1 time 0
+
+# ---------------- CLEANUP (IMPORTANT FIX) ----------------
+cleanup() {
+    printf "\e[?25h\e[0m"
+    if [[ -n "$orig_tty" ]]; then
+        stty "$orig_tty" 2>/dev/null
+    fi
+    clear
+    exit 0
+}
+trap cleanup EXIT INT TERM
 
 # ---------------- BITWISE ----------------
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
-        if [[ "${gbb_states[$i]}" == "1" ]]; then
-            (( hex_val |= (1 << i) ))
-        fi
+        [[ "${gbb_states[$i]}" == "1" ]] && (( hex_val |= (1 << i) ))
     done
     printf "0x%X" "$hex_val"
 }
@@ -82,14 +92,14 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- INPUT (FIXED: NO EMPTY SPAM / NO ESCAPE LEAKS) ----------------
+# ---------------- INPUT ----------------
 read_key() {
     local key rest
 
-    # BLOCK until real input arrives (this is what removes flicker + spam loop)
     IFS= read -rsn1 key || return
 
-    # Handle arrow keys safely
+    [[ -z "$key" ]] && return
+
     if [[ "$key" == $'\e' ]]; then
         IFS= read -rsn2 -t 0.001 rest || rest=""
         key+="$rest"
@@ -128,15 +138,15 @@ draw_interface() {
         local sep=0
 
         case "$i" in
-            0) right_content=$(printf " Press D to decode flags.                          │") ;;
-            1) right_content=$(printf "───────────────────────────────────────────────────┤"); sep=1 ;;
+            0) right_content=" Press D to decode flags.                          │" ;;
+            1) right_content="───────────────────────────────────────────────────┤"; sep=1 ;;
             2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
-            3) right_content=$(printf "───────────────────────────────────────────────────┤"); sep=1 ;;
+            3) right_content="───────────────────────────────────────────────────┤"; sep=1 ;;
             4) right_content=$(printf " %-49s │" "${gbb_names[$current_index]:0:49}") ;;
             5) right_content=$(printf " %-49s │" "${desc_lines[0]:-}") ;;
             6) right_content=$(printf " %-49s │" "${desc_lines[1]:-}") ;;
             7) right_content=$(printf " %-49s │" "${desc_lines[2]:-}") ;;
-            8) right_content=$(printf "───────────────────────────────────────────────────┘"); sep=1 ;;
+            8) right_content="───────────────────────────────────────────────────┘"; sep=1 ;;
             *) right_content="" ;;
         esac
 
@@ -154,17 +164,7 @@ draw_interface() {
     echo "└───────────────────────────────────┘"
 }
 
-# ---------------- CLEANUP ----------------
-cleanup() {
-    stty sane
-    printf "\e[?25h\e[0m"
-    clear
-    exit 0
-}
-
-trap cleanup SIGINT SIGTERM
-
-# ---------------- START ----------------
+# ---------------- MAIN LOOP ----------------
 clear
 printf "\e[?25l"
 
@@ -174,33 +174,32 @@ while true; do
 
     case "$INPUT_KEY" in
         s|S|$'\e[B')
-            (( current_index < total_flags - 1 )) && (( current_index++ ))
+            (( current_index < total_flags - 1 )) && ((current_index++))
             ;;
         w|W|$'\e[A')
-            (( current_index > 0 )) && (( current_index-- ))
+            (( current_index > 0 )) && ((current_index--))
             ;;
         $'\n'|$'\r')
             (( gbb_states[current_index] ^= 1 ))
             ;;
-d|D)
-    printf "\e[?25h"
-    printf "\nEnter hex string (ex. 0xa0b1): "
+        d|D)
+            printf "\e[?25h"
+            printf "\nEnter hex string (ex. 0xa0b1): "
 
-    stty "$orig_tty"
-    read -r user_input
-    stty -echo -icanon min 1 time 0
+            stty "$orig_tty"
+            read -r user_input
+            stty -echo -icanon min 1 time 0
 
-    if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
-        decode_gbb_hex "$user_input"
-    fi
+            if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
+                decode_gbb_hex "$user_input"
+            fi
 
-    printf "\e[?25l"
-    ;;
+            printf "\e[?25l"
+            ;;
         e|E)
             cleanup
             ;;
     esac
 
-    # optional tiny pacing (SAFE now, no longer required for correctness)
     sleep 0.02
 done
