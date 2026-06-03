@@ -193,7 +193,8 @@ menu_fun() {
                 curl -fsSL "https://raw.githubusercontent.com/feherke/Bash-script/refs/heads/master/minesweeper/minesweeper.sh" -o /tmp/minesweeper.sh && bash /tmp/minesweeper.sh
                 ;;
             e)
-                curl -fsSL "https://raw.githubusercontent.com/crosbreaker/badsh1mmer/refs/heads/main/badsh1mmer/scripts/whale.txt" -o /tmp/whale.txt && cat /tmp/whale.txt
+                curl -fsSL "https://raw.githubusercontent.com/crosbreaker/badsh1mmer/refs/heads/main/badsh1mmer/scripts/whale.txt" -o /tmp/whale.txt
+                cat /tmp/whale.txt
                 tty_anykey
                 ;;
             r)
