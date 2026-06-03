@@ -194,6 +194,7 @@ menu_fun() {
                 ;;
             e)
                 curl -fsSL "https://raw.githubusercontent.com/crosbreaker/badsh1mmer/refs/heads/main/badsh1mmer/scripts/whale.txt" -o /tmp/whale.txt && cat /tmp/whale.txt
+                tty_anykey
                 ;;
             r)
                 break
