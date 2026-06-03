@@ -10,7 +10,7 @@ gbb_names=(
     "DISABLE_FW_ROLLBACK_CHECK"
     "ENTER_TRIGGERS_TONORM"
     "FORCE_DEV_BOOT_ALTFW"
-    "DEPRECATED_RUNNING_FAFT"
+    "DEPRECATED_RUNNING_FAFT"d
     "DISABLE_EC_SOFTWARE_SYNC"
     "DEFAULT_DEV_BOOT_ALTFW"
     "DISABLE_AUXFW_SOFTWARE_SYNC"
@@ -182,20 +182,23 @@ while true; do
         $'\n'|$'\r')
             (( gbb_states[current_index] ^= 1 ))
             ;;
-        d|D)
-            printf "\e[?25h"
-            printf "\nEnter hex string (ex. 0xa0b1): "
+d|D)
+    printf "\e[?25h"
+    printf "\nEnter hex string (ex. 0x18019): "
 
-            stty "$orig_tty"
-            read -r user_input
-            stty -echo -icanon min 1 time 0
+    # temporarily restore canonical mode JUST for input
+    stty sane
+    read -r user_input
 
-            if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
-                decode_gbb_hex "$user_input"
-            fi
+    # restore TUI mode
+    stty -echo -icanon min 1 time 0
 
-            printf "\e[?25l"
-            ;;
+    if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
+        decode_gbb_hex "$user_input"
+    fi
+
+    printf "\e[?25l"
+    ;;
         e|E)
             cleanup
             ;;
