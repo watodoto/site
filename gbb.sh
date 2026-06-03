@@ -52,8 +52,9 @@ done
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# ---------------- TERMINAL SETUP (FIX #1) ----------------
-stty -echo -icanon time 0 min 0
+# ---------------- TERMINAL SETUP (FIXED PROPERLY) ----------------
+# IMPORTANT: no polling loop + no echo + raw input
+stty -echo -icanon min 1 time 0
 
 # ---------------- BITWISE ----------------
 calc_gbb_hex() {
@@ -81,21 +82,17 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- INPUT (FIX #2: NO ESCAPE LEAKS) ----------------
+# ---------------- INPUT (FIXED: NO EMPTY SPAM / NO ESCAPE LEAKS) ----------------
 read_key() {
     local key rest
 
-    IFS= read -rsn1 -t 0.02 key || return
+    # BLOCK until real input arrives (this is what removes flicker + spam loop)
+    IFS= read -rsn1 key || return
 
+    # Handle arrow keys safely
     if [[ "$key" == $'\e' ]]; then
         IFS= read -rsn2 -t 0.001 rest || rest=""
         key+="$rest"
-
-        # drain leftover burst input (prevents spam corruption)
-        while IFS= read -rsn1 -t 0.0005 c; do
-            key+="$c"
-            [[ "$c" =~ [A-D] ]] && break
-        done
     fi
 
     INPUT_KEY="$key"
@@ -103,8 +100,7 @@ read_key() {
 
 # ---------------- DRAW ----------------
 draw_interface() {
-    # FIX #3: full clear prevents ghost characters
-    printf "\e[2J\e[H\e[?25l"
+    printf "\e[H\e[?25l"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
@@ -183,7 +179,7 @@ while true; do
         w|W|$'\e[A')
             (( current_index > 0 )) && (( current_index-- ))
             ;;
-        $'\n'|$'\r'|"")
+        $'\n'|$'\r')
             (( gbb_states[current_index] ^= 1 ))
             ;;
         d|D)
@@ -199,4 +195,7 @@ while true; do
             cleanup
             ;;
     esac
+
+    # optional tiny pacing (SAFE now, no longer required for correctness)
+    sleep 0.02
 done
