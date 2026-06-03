@@ -95,7 +95,7 @@ read_key() {
     local key rest
 
     # wait for input, otherwise DO NOTHING (prevents replay bugs)
-    IFS= read -rsn1 -t 0.05 key || return
+    IFS= read -rsn1 -t 0.1 key || return
     [[ -z "$key" ]] && return
 
     # build escape sequence safely (arrows)
@@ -191,7 +191,7 @@ while true; do
     read_key
 
     [[ -z "$INPUT_KEY" ]] && continue
-    [[ "$INPUT_KEY" == $'\e' ]] && continue
+    [[ "$INPUT_KEY" == $'\e[' ]] && continue
 
     case "$INPUT_KEY" in
         s|S|$'\e[B')
@@ -200,7 +200,7 @@ while true; do
         w|W|$'\e[A')
             ((current_index > 0)) && ((current_index--))
             ;;
-        $'\n')
+        $'\n'|$'\r')
             ((gbb_states[current_index] ^= 1))
             ;;
         d|D)
@@ -211,5 +211,5 @@ while true; do
             ;;
     esac
 
-    sleep 0.02
+    sleep 0.01
 done
