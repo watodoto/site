@@ -122,9 +122,8 @@ draw_interface() {
     done < <(printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49)
 
     echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-    echo "│      GBB-flaginator in Bash!      │ Press enter to select, arrow keys to navigate.   │"
+    echo "│      GBB-flaginator in Bash!      │ Press enter to select, arrow keys to navigate.    │"
     echo "├───────────────────────────────────┤ Press E to exit the tool.                         │"
-    echo "│                                   │ Press D to decode given flags.                   │"
 
     for i in "${!gbb_names[@]}"; do
         local marker=" "
@@ -140,7 +139,7 @@ draw_interface() {
         local sep=0
 
         case "$i" in
-            0) right_content="" ;;
+            0) right_content=" Press D to decode flags.                          │" ;;
             1) right_content="───────────────────────────────────────────────────┤"; sep=1 ;;
             2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
             3) right_content="───────────────────────────────────────────────────┤"; sep=1 ;;
