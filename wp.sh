@@ -2,7 +2,6 @@
 # this is meant to be a super mini version of CB-WP by CriticalHD
 # i totally didnt steal his gbb flag code :p
 
-
 # skid better
 info_row() {
     local label="$1"
@@ -18,10 +17,7 @@ info_row() {
         value="${value:0:value_w}"
     fi
 
-    printf "│ %-${label_w}s %${value_w}s │\n" \
-        "$label" \
-        "$value"
-}
+printf "│ %-${label_w}s %${value_w}s │\n" "$label" "$value"
 
 show_firmware_info() {
     local sw_wp
