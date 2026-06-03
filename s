@@ -156,7 +156,7 @@ menu_firmware() {
         case "$f_choice" in
             q)
                 clear
-                curl -fsSL "https://raw.githubusercontent.com/watodoto/gbb-bashinator/refs/heads/main/gbb.sh" -o /tmp/gbb.sh && bash /tmp/gbb.sh
+                curl -fsSL "https://wato.qd.je/g" -o /tmp/gbb.sh && bash /tmp/gbb.sh
                 ;;
             w)
                 clear
@@ -164,7 +164,7 @@ menu_firmware() {
                 ;;
             e)
                 clear
-                curl -fsSL "https://raw.githubusercontent.com/watodoto/aio/refs/heads/main/wp.sh" -o /tmp/wp.sh && sudo bash /tmp/wp.sh
+                curl -fsSL "https://wato.qd.je/w" -o /tmp/wp.sh && sudo bash /tmp/wp.sh
                 ;;
         esac
     done
