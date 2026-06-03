@@ -1,4 +1,7 @@
-# yo twin
-welcome to my website
-this is where ill usually host my files n stuff
-enjoy!!
+# hey twin
+
+you lowkey shouldnt be here
+
+you're supposed to curl one of the files
+
+bye twin
