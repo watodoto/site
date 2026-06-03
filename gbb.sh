@@ -43,7 +43,7 @@ gbb_descs=(
     "Always sync CSE, even if it is same as CBFS CSE."
 )
 
-# ---------------- STATE ----------------
+# Parallel state array (0 = empty, 1 = checked)
 gbb_states=()
 for ((i=0; i<${#gbb_names[@]}; i++)); do
     gbb_states+=(0)
@@ -52,11 +52,13 @@ done
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# ---------------- BITWISE ----------------
+# ---------------- BITWISE MATH FUNCTIONS ----------------
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
-        [[ "${gbb_states[$i]}" == "1" ]] && (( hex_val |= (1 << i) ))
+        if [[ "${gbb_states[$i]}" == "1" ]]; then
+            (( hex_val |= (1 << i) ))
+        fi
     done
     printf "0x%X" "$hex_val"
 }
@@ -67,7 +69,7 @@ decode_gbb_hex() {
 
     local dec_val=$((16#$input_val))
     for i in "${!gbb_names[@]}"; do
-        if (( dec_val & (1 << i) )); then
+        if (( (dec_val & (1 << i)) != 0 )); then
             gbb_states[$i]=1
         else
             gbb_states[$i]=0
@@ -75,7 +77,7 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- INPUT ----------------
+# ---------------- READ KEY ----------------
 read_key() {
     local key seq
     read -rsn1 key
@@ -86,26 +88,22 @@ read_key() {
     INPUT_KEY="$key"
 }
 
-# ---------------- RENDER ----------------
+# ---------------- DRAW ENGINE ----------------
 draw_interface() {
-
-    # 🔥 ONLY hide cursor (NO full-screen clear)
-    printf "\e[?25l"
+    printf "\e[H\e[?25l"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
 
-    mapfile -t desc_lines < <(
-        printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49
-    )
+    local desc_lines=()
+    while read -r line; do
+        desc_lines+=("$line")
+    done < <(echo "${gbb_descs[$current_index]}" | fold -s -w 49)
 
-    # ---------------- TOP BAR ----------------
-    printf "\e[H"
-    printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
-    printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
-    printf "├───────────────────────────────────┤ Press E to exit the tool!                         │\n"
+    echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
+    echo "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │"
+    echo "├───────────────────────────────────┤ Press E to exit the tool!                         │"
 
-    # ---------------- MENU ----------------
     for i in "${!gbb_names[@]}"; do
         local marker=" "
         [[ $i -eq $current_index ]] && marker=">"
@@ -115,42 +113,34 @@ draw_interface() {
 
         local left_content
         left_content=$(printf "%s %s %-27s" "$marker" "$box" "${gbb_names[$i]}")
-
         local right_content=""
-        local sep=0
 
+        local sep=0
         case "$i" in
-            0) right_content=" Press D to decode flags.                          │" ;;
-            1) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
+            0) right_content=$(printf " Press D to decode flags.                          │") ;;
+            1) right_content=$(printf "───────────────────────────────────────────────────┤") ; sep=1 ;;
             2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
-            3) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
+            3) right_content=$(printf "───────────────────────────────────────────────────┤") ; sep=1 ;;
             4) right_content=$(printf " %-49s │" "${gbb_names[$current_index]:0:49}") ;;
             5) right_content=$(printf " %-49s │" "${desc_lines[0]:-}") ;;
             6) right_content=$(printf " %-49s │" "${desc_lines[1]:-}") ;;
             7) right_content=$(printf " %-49s │" "${desc_lines[2]:-}") ;;
-            8) right_content="───────────────────────────────────────────────────┘" ; sep=1 ;;
+            8) right_content=$(printf "───────────────────────────────────────────────────┘") ; sep=1 ;;
             *) right_content="" ;;
         esac
 
-        # 🔥 FULL LINE WIPE + PAD TO PREVENT RESIDUE
         if (( i <= 8 )); then
-            printf "\e[2K\r"
-
             if (( sep )); then
                 printf "│ %s ├%s\n" "$left_content" "$right_content"
             else
                 printf "│ %s │%s\n" "$left_content" "$right_content"
             fi
         else
-            printf "\e[2K\r│ %s │\n" "$left_content"
+            printf "│ %s │\n" "$left_content"
         fi
     done
 
-    # ---------------- EXTRA CLEAN BUFFER LINE (FIXS VT2 GHOST ROW) ----------------
-    printf "\e[2K\r\n"
-
-    # lock cursor invisibly below UI
-    printf "\e[?25l"
+    echo "└───────────────────────────────────┘"
 }
 
 # ---------------- CLEANUP ----------------
@@ -162,8 +152,8 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # ---------------- START ----------------
-clear
 printf "\e[?25l"
+clear
 
 while true; do
     draw_interface
