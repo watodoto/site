@@ -82,7 +82,7 @@ tty_anykey() {
 # wrtie stupid header for the menu buh
 draw_header() {
     local left="Simple AIO Script"
-    local right="v1.0.1"
+    local right="v1.0.6" #something like that probably lol
     local by="by wato"
 
     echo "┌─────────────────────┬──────┐"
