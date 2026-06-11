@@ -30,6 +30,5 @@ sleep 1
 echo -e
 
 echo -e "Done!"
-sleep 1
 echo -e "This is just modmium's fwmp.sh but I added more shit to it."
 echo -e "- wato"
